@@ -1,0 +1,14 @@
+enum Responses {
+    OK = 200,
+    NOT_VERIFIED = 201,
+    INVALID_CREDENTIALS = 202,
+    DUPLICATED_ACCOUNT = 203,
+    BAD_REQUEST = 400,
+    UNAUTHORIZED = 401,
+    FORBIDDEN = 403,
+    NOT_FOUND = 404,
+    INTERNAL_SERVER_ERROR = 500,
+    SERVICE_UNAVAILABLE = 503,
+}
+
+export { Responses }
