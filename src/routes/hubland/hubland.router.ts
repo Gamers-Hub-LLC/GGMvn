@@ -43,7 +43,13 @@ class ShipRouter {
         if(record) {
             if(filePath.endsWith(".pom")){
                 res.set('Content-Type', "text/xml");
-                res.send(record.buildXML());
+                res.send(record.buildPOM());
+                return;
+            }
+
+            if(filePath.endsWith("maven-metadata.xml")){
+                res.set('Content-Type', "text/xml");
+                res.send(record.buildMetadata());
                 return;
             }
 
