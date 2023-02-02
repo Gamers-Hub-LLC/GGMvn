@@ -25,7 +25,7 @@ class ExpressProvider {
         this.app.use(express.json());
         this.app.use(express.urlencoded({ extended: true }));
         this.app.use(cors());
-        this.app.use(require('morgan')())
+        this.app.use(require('morgan')('combined'))
         this.app.use(ExpressProvider.router);
         await this._public.Init();
         await this._maven.Init();
