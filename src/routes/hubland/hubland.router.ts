@@ -9,6 +9,7 @@ import { Inject } from '@app/types/depmgr';
 import StorageProvider from '@app/providers/public';
 import MavenProvider, { MavenRecord } from '@app/providers/maven';
 import convert from 'xml-js';
+import crypto from 'crypto';
 
 @TwinHandler
 class ShipRouter {
@@ -55,6 +56,30 @@ class ShipRouter {
             if(filePath.endsWith("maven-metadata.xml")){
                 res.set('Content-Type', "text/xml");
                 res.send(record.buildMetadata());
+                return;
+            }
+
+            if(filePath.endsWith(".jar.md5")){
+                res.set('Content-Type', "text/plain");
+                res.send(crypto.createHash('md5').update(record.file!).digest("hex"));
+                return;
+            }
+
+            if(filePath.endsWith(".jar.sha1")){
+                res.set('Content-Type', "text/plain");
+                res.send(crypto.createHash('sha1').update(record.file!).digest("hex"));
+                return;
+            }
+
+            if(filePath.endsWith("maven-metadata.xml.md5")){
+                res.set('Content-Type', "text/plain");
+                res.send(`./mvn${filePath} ${crypto.createHash('sha1').update(record.file!).digest("hex")}`);
+                return;
+            }
+
+            if(filePath.endsWith("maven-metadata.xml.sha1")){
+                res.set('Content-Type', "text/plain");
+                res.send(`${path.resolve("mvn/"+filePath)} ${crypto.createHash('sha1').update(record.file!).digest("hex")}`);
                 return;
             }
 
