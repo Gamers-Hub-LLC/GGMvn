@@ -41,7 +41,41 @@ class ShipRouter {
         return res.sendStatus(404);
     }
 
-    @Route( RequestType.GET, "/repository/*" )
+    static async Auth(req: Request, res: Response, next: any) {
+        const authorization = req.headers.authorization?.split(' ');
+        if(authorization && authorization[0] === 'Basic') {
+            const [username, password] = Buffer.from(authorization[1], 'base64').toString().split(':');
+            if(username === "mcdev" && password === "9kw&lQMJVj!Ym2S!t4rT!2ix7NT") {
+                next();
+                return;
+            }
+        }
+
+        res.set('WWW-Authenticate', 'Basic realm="Authorization Required"');
+        return res.sendStatus(401);
+    }
+
+    createVirtualStream(){
+        let tmp = path.join(os.tmpdir(), new Date().getTime().toString());
+        let stream = fs.createWriteStream(tmp);
+        stream.on('finish', () => {
+            stream.emit('end', fs.readFileSync(tmp));
+            fs.rmSync(tmp);
+        });
+        return stream;
+    }
+
+    fetchFile(req: Request): Promise<Buffer> {
+        return new Promise((resolve) => {
+            let stream = this.createVirtualStream();
+            stream.on('end', (data) => {
+                resolve(data);
+            });
+            req.pipe(stream);
+        })
+    }
+
+    @Route( RequestType.GET, "/repository/*", [ ShipRouter.Auth ] )
     async repository (req: Request, res: Response) {
         let filePath = req.url.substring(11);
         let record = this._maven?.Find(filePath.toLocaleLowerCase());
@@ -96,28 +130,10 @@ class ShipRouter {
         return res.sendStatus(404);
     }
 
-    createVirtualStream(){
-        let tmp = path.join(os.tmpdir(), new Date().getTime().toString());
-        let stream = fs.createWriteStream(tmp);
-        stream.on('finish', () => {
-            stream.emit('end', fs.readFileSync(tmp));
-            fs.rmSync(tmp);
-        });
-        return stream;
-    }
-
-    fetchFile(req: Request): Promise<Buffer> {
-        return new Promise((resolve) => {
-            let stream = this.createVirtualStream();
-            stream.on('end', (data) => {
-                resolve(data);
-            });
-            req.pipe(stream);
-        })
-    }
-
-    @Route( RequestType.PUT, "/repository/*" )
+    @Route( RequestType.PUT, "/repository/*", [ ShipRouter.Auth ] )
     async repositoryPub (req: Request, res: Response) {
+
+        console.log(req.headers);
 
         let filePath = req.url.substring(11);
         if(filePath.endsWith("maven-metadata.xml")){
