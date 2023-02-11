@@ -68,8 +68,6 @@ class ShipRouter {
             return;
         }
 
-        console.log("404", filePath);
-
         return res.sendStatus(404);
     }
 
@@ -100,7 +98,6 @@ class ShipRouter {
         if(filePath.endsWith("maven-metadata.xml")){
             let data = await this.fetchFile(req);
             let result = (convert.xml2js(data.toString('utf8'), { compact: true }) as any).metadata;
-            console.log("Preloading", result);
             let artifact = result.artifactId._text as string;
             let record = new MavenRecord(
                 result.groupId._text as string,
