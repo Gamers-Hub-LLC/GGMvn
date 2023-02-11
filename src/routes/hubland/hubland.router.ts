@@ -80,8 +80,8 @@ class ShipRouter {
         res.send(`
             <html>
                 <head>
-                    <title>Repository</title>
-                    <link rel="stylesheet" href="shared/app.css">
+                    <title>Hubland Main Repository</title>
+                    <link rel="stylesheet" href="https://assets.hubland.gg/app.css">
                 </head>
                 <body>
                     <div id="main">
