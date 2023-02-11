@@ -46,6 +46,7 @@ function _MethodImplementation(entry: AllowedTypes) {
     switch(entry.type) {
         case RequestType.GET:
         case RequestType.POST:
+        case RequestType.PUT:
             let rest = (entry as RestEntry);
             console.log(`[Triforce] Registering ${RequestType[entry.type]} route: ${rest.urlPath}`);
             (ExpressProvider.router as any)[RequestType[entry.type].toLowerCase()](rest.urlPath, rest.handler as (req: Request, res: Response) => void);

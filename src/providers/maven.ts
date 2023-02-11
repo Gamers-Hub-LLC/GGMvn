@@ -5,15 +5,17 @@ class MavenRecord {
     package: string;
     artifact: string;
     version: string;
-    internal: string;
-    file: Buffer;
+    internal: string | undefined;
+    file: Buffer | undefined;
 
-    constructor(mvnPackage: string, artifact: string, version: string, file: string) {
+    constructor(mvnPackage: string, artifact: string, version: string, file?: string ) {
         this.package = mvnPackage;
         this.artifact = artifact;
         this.version = version;
-        this.internal = path.basename(file);
-        this.file = fs.readFileSync(file);
+        if(file) {
+            this.internal = path.basename(file);
+            this.file = fs.readFileSync(file);
+        }
     }
 
     buildPOM(): string {
@@ -85,6 +87,22 @@ class MavenProvider {
             let version = raw[raw.length - 2];
             return entry.package.toLocaleLowerCase() === package_ && entry.artifact.toLocaleLowerCase() === artifact && entry.version.toLocaleLowerCase() === version;
         });
+    }
+
+    GetByID = (id: number): MavenRecord | undefined => {
+        return this.memory[id];
+    }
+
+    Preload = (record: MavenRecord): number => {
+        this.memory.push(record);
+        return this.memory.length - 1;
+    }
+
+    Finish = (index: number, record: MavenRecord) => {
+        this.memory[index] = record;
+        let parent = path.join(this.directory, record.package.replace(/\./g, path.sep), record.artifact, record.version);
+        fs.mkdirSync(parent, { recursive: true });
+        fs.writeFileSync(path.join(parent, record.internal!), record.file!);
     }
 }
 

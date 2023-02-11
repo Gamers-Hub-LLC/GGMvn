@@ -1,10 +1,14 @@
 import { TwinHandler, Route, RequestType } from '@app/types/handler';
 import { Request, Response } from 'express';
 import mime from 'mime-types';
+import fs from 'fs';
+import path from 'path';
+import os from 'os';
 import { Readable } from 'stream';
 import { Inject } from '@app/types/depmgr';
 import StorageProvider from '@app/providers/public';
 import MavenProvider, { MavenRecord } from '@app/providers/maven';
+import convert from 'xml-js';
 
 @TwinHandler
 class ShipRouter {
@@ -13,6 +17,7 @@ class ShipRouter {
     _public: StorageProvider | undefined;
     @Inject("mvn_repository")
     _maven:  MavenProvider | undefined;
+    _preloads: Map<string, number> = new Map();
 
     @Route( RequestType.GET, "/shared/*" )
     async shared (req: Request, res: Response) {
@@ -63,7 +68,64 @@ class ShipRouter {
             return;
         }
 
+        console.log("404", filePath);
+
         return res.sendStatus(404);
+    }
+
+    createVirtualStream(){
+        let tmp = path.join(os.tmpdir(), new Date().getTime().toString());
+        let stream = fs.createWriteStream(tmp);
+        stream.on('finish', () => {
+            stream.emit('end', fs.readFileSync(tmp));
+            fs.rmSync(tmp);
+        });
+        return stream;
+    }
+
+    fetchFile(req: Request): Promise<Buffer> {
+        return new Promise((resolve) => {
+            let stream = this.createVirtualStream();
+            stream.on('end', (data) => {
+                resolve(data);
+            });
+            req.pipe(stream);
+        })
+    }
+
+    @Route( RequestType.PUT, "/repository/*" )
+    async repositoryPub (req: Request, res: Response) {
+
+        let filePath = req.url.substring(11);
+        if(filePath.endsWith("maven-metadata.xml")){
+            let data = await this.fetchFile(req);
+            let result = (convert.xml2js(data.toString('utf8'), { compact: true }) as any).metadata;
+            console.log("Preloading", result);
+            let artifact = result.artifactId._text as string;
+            let record = new MavenRecord(
+                result.groupId._text as string,
+                artifact,
+                (result.versioning.latest ? result.versioning.latest : result.version)._text as string
+            );
+
+            this._preloads.set(artifact, this._maven!.Preload(record));
+        }
+
+        if(filePath.endsWith(".jar")){
+            for(let [key, value] of this._preloads){
+                if(filePath.includes(key)){
+                    let data = await this.fetchFile(req);
+                    let record = this._maven!.GetByID(value)!;
+                    record.internal = filePath.substring(filePath.lastIndexOf("/") + 1);
+                    record.file = data;
+                    this._maven!.Finish(value, record);
+                    this._preloads.delete(key);
+                    break;
+                }
+            }
+        }
+
+        return res.sendStatus(200);
     }
 }
 
