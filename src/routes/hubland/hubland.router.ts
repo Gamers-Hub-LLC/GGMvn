@@ -75,6 +75,25 @@ class ShipRouter {
         })
     }
 
+    @Route( RequestType.GET, "/repository" )
+    async parent (req: Request, res: Response) {
+        res.send(`
+            <html>
+                <head>
+                    <title>Repository</title>
+                    <link rel="stylesheet" href="shared/app.css">
+                </head>
+                <body>
+                    <div id="main">
+                        <div class="fof">
+                            <h1><3</h1>
+                        </div>
+                    </div>
+                </body>
+            </html>
+        `)
+    }
+
     @Route( RequestType.GET, "/repository/*", [ ShipRouter.Auth ] )
     async repository (req: Request, res: Response) {
         let filePath = req.url.substring(11);
